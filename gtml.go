@@ -6,15 +6,19 @@ import (
 	"strings"
 )
 
+// KV represents a key-value map for HTML attributes.
+// Value can only be string or bool, otherwirse Render will return an error.
+// If value is bool, attribute doesn't have a value, and will be included if value is true.
 type KV map[string]any
 
+// Element represents an HTML element or text node
 type Element struct {
-	Tag           string
-	IsSelfClosing bool
-	Attrs         KV
-	Children      []*Element
-	IsText        bool
-	Text          string // only used if IsText is true
+	Tag           string     // HTML tag name
+	IsSelfClosing bool       // Whether the tag is self-closing (e.g., <br>, <img>)
+	Attrs         KV         // HTML attributes as key-value pairs
+	Children      []*Element // Child elements
+	IsText        bool       // Whether this is a text node
+	Text          string     // Text content (only used if IsText is true)
 }
 
 func (me *Element) validateAttributes() error {
@@ -22,11 +26,9 @@ func (me *Element) validateAttributes() error {
 		if key == "" {
 			return fmt.Errorf("empty attribute key not allowed")
 		}
-
 		if value == nil {
 			return fmt.Errorf("attribute '%s' has nil value", key)
 		}
-
 		valType := reflect.TypeOf(value)
 		if valType.Kind() != reflect.String && valType.Kind() != reflect.Bool {
 			return fmt.Errorf("attribute value must be string or bool, got %T for key '%s'", value, key)
@@ -35,6 +37,8 @@ func (me *Element) validateAttributes() error {
 	return nil
 }
 
+// Render generates the HTML string for the element and its children.
+// If element is a self-closing tag, children will be ignored
 func (me *Element) Render() (string, error) {
 	if err := me.validateAttributes(); err != nil {
 		return "", err
@@ -75,10 +79,9 @@ func (me *Element) renderHTML() string {
 	return html.String()
 }
 
+// Add appends child elements to this element and returns the element for chaining
 func (me *Element) Add(children ...*Element) *Element {
-	if me.IsSelfClosing {
-		panic("trying to add children to a self-closing element")
-	}
+	// NOTE: children are not rendered if IsSelfClosing
 	me.Children = append(me.Children, children...)
 	return me
 }
@@ -94,6 +97,7 @@ func newElement(tag string, attrs []KV, isSelfClosing ...bool) *Element {
 	return e
 }
 
+// Text creates a plain text node element (not a tag)
 func Text(s string) *Element {
 	return &Element{
 		IsText: true,
@@ -126,7 +130,7 @@ func P(attrs ...KV) *Element {
 }
 
 func H1(attrs ...KV) *Element {
-	return newElement("hq", attrs)
+	return newElement("h1", attrs)
 }
 
 func H2(attrs ...KV) *Element {
