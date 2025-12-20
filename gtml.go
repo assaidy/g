@@ -2,9 +2,31 @@ package gtml
 
 import (
 	"fmt"
+	"html"
+	"io"
 	"reflect"
 	"strings"
 )
+
+func Render(writer io.Writer, node Node) error {
+	s, err := node.Render()
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write([]byte(s))
+	return err
+}
+
+type Node interface {
+	Render() (string, error)
+}
+
+// Text creates a plain text node element (not a tag)
+type Text string
+
+func (me Text) Render() (string, error) {
+	return html.EscapeString(string(me)), nil
+}
 
 // KV represents a key-value map for HTML attributes.
 // Value can only be string or bool, otherwirse Render will return an error.
@@ -16,9 +38,7 @@ type Element struct {
 	Tag           string     // HTML tag name
 	IsSelfClosing bool       // Whether the tag is self-closing (e.g., <br>, <img>)
 	Attrs         KV         // HTML attributes as key-value pairs
-	Children      []*Element // Child elements
-	IsText        bool       // Whether this is a text node
-	Text          string     // Text content (only used if IsText is true)
+	Children      []Node     // Child nodes
 }
 
 func (me *Element) validateAttributes() error {
@@ -43,51 +63,51 @@ func (me *Element) Render() (string, error) {
 	if err := me.validateAttributes(); err != nil {
 		return "", err
 	}
-	return me.renderHTML(), nil
+	return me.renderHTML()
 }
 
-func (me *Element) renderHTML() string {
-	if me.IsText {
-		return me.Text
-	}
+func (me *Element) renderHTML() (string, error) {
+	var builder strings.Builder
 
-	var html strings.Builder
-
-	html.WriteString("<")
-	html.WriteString(me.Tag)
+	builder.WriteString("<")
+	builder.WriteString(me.Tag)
 
 	for key, value := range me.Attrs {
 		if value == true {
-			html.WriteString(fmt.Sprintf(" %s", key))
+			builder.WriteString(fmt.Sprintf(" %s", key))
 		} else if value != "" {
-			html.WriteString(fmt.Sprintf(` %s="%s"`, key, value))
+			builder.WriteString(fmt.Sprintf(` %s="%s"`, key, value))
 		}
 	}
 
-	html.WriteString(">")
+	builder.WriteString(">")
 	if me.IsSelfClosing {
-		return html.String()
+		return builder.String(), nil
 	}
 
 	if len(me.Children) > 0 {
 		for _, child := range me.Children {
-			html.WriteString(child.renderHTML())
+			s, err := child.Render()
+			if err != nil {
+				return "", err
+			}
+			builder.WriteString(s)
 		}
 	}
+	builder.WriteString(fmt.Sprintf("</%s>", me.Tag))
 
-	html.WriteString(fmt.Sprintf("</%s>", me.Tag))
-	return html.String()
+	return builder.String(), nil
 }
 
 // Add appends child elements to this element and returns the element for chaining
-func (me *Element) Add(children ...*Element) *Element {
+func (me *Element) Add(children ...Node) Node {
 	// NOTE: children are not rendered if IsSelfClosing
 	me.Children = append(me.Children, children...)
 	return me
 }
 
 func newElement(tag string, attrs []KV, isSelfClosing ...bool) *Element {
-	e := &Element{Tag: tag}
+	e := &Element{Tag: tag, Attrs: make(KV)}
 	if len(attrs) != 0 {
 		e.Attrs = attrs[0]
 	}
@@ -95,14 +115,6 @@ func newElement(tag string, attrs []KV, isSelfClosing ...bool) *Element {
 		e.IsSelfClosing = isSelfClosing[0]
 	}
 	return e
-}
-
-// Text creates a plain text node element (not a tag)
-func Text(s string) *Element {
-	return &Element{
-		IsText: true,
-		Text:   s,
-	}
 }
 
 func Ul(attrs ...KV) *Element {

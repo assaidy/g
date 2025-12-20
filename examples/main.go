@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/assaidy/gtml"
 	g "github.com/assaidy/gtml"
 )
 
@@ -73,10 +76,7 @@ func main() {
 		),
 	)
 
-	html, err = page.Render()
-	if err != nil {
+	if err := gtml.Render(os.Stdout, page); err != nil {
 		fmt.Printf("Error: %v\n", err)
-	} else {
-		fmt.Println(html)
 	}
 }
