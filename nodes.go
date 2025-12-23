@@ -10,12 +10,9 @@ import (
 )
 
 func Render(writer io.Writer, node Node) error {
-	var s string
-	var err error
-	if node != nil {
-		if s, err = node.Render(); err != nil {
-			return err
-		}
+	s, err := node.Render()
+	if err != nil {
+		return err
 	}
 	_, err = writer.Write([]byte(s))
 	return err
@@ -113,13 +110,11 @@ func (me Element) renderHTML() string {
 
 	if len(me.Children) > 0 {
 		for _, child := range me.Children {
-			if child != nil {
-				s, err := child.Render()
-				if err != nil {
-					return ""
-				}
-				builder.WriteString(s)
+			s, err := child.Render()
+			if err != nil {
+				return ""
 			}
+			builder.WriteString(s)
 		}
 	}
 
