@@ -1,4 +1,4 @@
-package gtml
+package g
 
 import (
 	"fmt"
@@ -6,12 +6,16 @@ import (
 	"io"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 func Render(writer io.Writer, node Node) error {
-	s, err := node.Render()
-	if err != nil {
-		return err
+	var s string
+	var err error
+	if node != nil {
+		if s, err = node.Render(); err != nil {
+			return err
+		}
 	}
 	_, err = writer.Write([]byte(s))
 	return err
@@ -25,7 +29,25 @@ type Node interface {
 type Text string
 
 func (me Text) Render() (string, error) {
-	return html.EscapeString(string(me)), nil
+	s := string(me)
+	if s == "" {
+		return "", nil
+	}
+
+	startsWithSpace := unicode.IsSpace(rune(s[0]))
+	endsWithSpace := len(s) > 1 && unicode.IsSpace(rune(s[len(s)-1]))
+
+	s = strings.Join(strings.FieldsFunc(s, unicode.IsSpace), " ")
+
+	// re-apply at most one space at each edge
+	if startsWithSpace {
+		s = " " + s
+	}
+	if endsWithSpace {
+		s = s + " "
+	}
+
+	return html.EscapeString(s), nil
 }
 
 // KV represents a key-value map for HTML attributes.
@@ -35,13 +57,13 @@ type KV map[string]any
 
 // Element represents an HTML element or text node
 type Element struct {
-	Tag           string     // HTML tag name
-	IsSelfClosing bool       // Whether the tag is self-closing (e.g., <br>, <img>)
-	Attrs         KV         // HTML attributes as key-value pairs
-	Children      []Node     // Child nodes
+	Tag           string // HTML tag name
+	IsSelfClosing bool   // Whether the tag is self-closing (e.g., <br>, <img>)
+	Attrs         KV     // HTML attributes as key-value pairs
+	Children      []Node // Child nodes
 }
 
-func (me *Element) validateAttributes() error {
+func (me Element) validateAttributes() error {
 	for key, value := range me.Attrs {
 		if key == "" {
 			return fmt.Errorf("empty attribute key not allowed")
@@ -58,50 +80,60 @@ func (me *Element) validateAttributes() error {
 }
 
 // Render generates the HTML string for the element and its children.
-// If element is a self-closing tag, children will be ignored
+// If element is a self-closing tag, children will be ignored.
+// If element is nil, it will be rendered as empty string.
 func (me *Element) Render() (string, error) {
 	if err := me.validateAttributes(); err != nil {
 		return "", err
 	}
-	return me.renderHTML()
+	return me.renderHTML(), nil
 }
 
-func (me *Element) renderHTML() (string, error) {
+func (me Element) renderHTML() string {
 	var builder strings.Builder
 
-	builder.WriteString("<")
-	builder.WriteString(me.Tag)
+	// not Empty tag
+	if me.Tag != "" {
+		builder.WriteString("<")
+		builder.WriteString(me.Tag)
 
-	for key, value := range me.Attrs {
-		if value == true {
-			builder.WriteString(fmt.Sprintf(" %s", key))
-		} else if value != "" {
-			builder.WriteString(fmt.Sprintf(` %s="%s"`, key, value))
+		for key, value := range me.Attrs {
+			if value == true {
+				builder.WriteString(fmt.Sprintf(" %s", key))
+			} else if value != "" {
+				builder.WriteString(fmt.Sprintf(` %s="%s"`, key, value))
+			}
 		}
-	}
 
-	builder.WriteString(">")
-	if me.IsSelfClosing {
-		return builder.String(), nil
+		builder.WriteString(">")
+		if me.IsSelfClosing {
+			return builder.String()
+		}
 	}
 
 	if len(me.Children) > 0 {
 		for _, child := range me.Children {
-			s, err := child.Render()
-			if err != nil {
-				return "", err
+			if child != nil {
+				s, err := child.Render()
+				if err != nil {
+					return ""
+				}
+				builder.WriteString(s)
 			}
-			builder.WriteString(s)
 		}
 	}
-	builder.WriteString(fmt.Sprintf("</%s>", me.Tag))
 
-	return builder.String(), nil
+	if me.Tag != "" {
+		builder.WriteString(fmt.Sprintf("</%s>", me.Tag))
+	}
+
+	return builder.String()
 }
 
 // Add appends child elements to this element and returns the element for chaining
 func (me *Element) Add(children ...Node) Node {
 	// NOTE: children are not rendered if IsSelfClosing
+	// TODO: create SelfClosingElement{} that doesn't have Add() method
 	me.Children = append(me.Children, children...)
 	return me
 }
@@ -115,6 +147,10 @@ func newElement(tag string, attrs []KV, isSelfClosing ...bool) *Element {
 		e.IsSelfClosing = isSelfClosing[0]
 	}
 	return e
+}
+
+func Empty(attrs ...KV) *Element {
+	return newElement("", attrs)
 }
 
 func Ul(attrs ...KV) *Element {

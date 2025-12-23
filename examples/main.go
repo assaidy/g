@@ -4,79 +4,87 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/assaidy/gtml"
-	g "github.com/assaidy/gtml"
+	"github.com/assaidy/g"
 )
 
 func main() {
-	// Example using the new API with Add() method and key-value pairs
-	nav := g.Ul(g.KV{"id": "some-id", "class": "class-a class-b", "boolean-tag": true}).Add(
-		g.Li().Add(g.A(g.KV{"href": "#home"}).Add(g.Text("Home"))),
-		g.Li().Add(g.A(g.KV{"href": "#about"}).Add(g.Text("About"))),
-		g.Li().Add(g.A(g.KV{"href": "#contact"}).Add(g.Text("Contact"))),
-	)
+	// Sample data for demonstration
+	items := []string{"Apple", "Banana", "Cherry", "Date"}
+	isLoggedIn := true
+	userName := "John Doe"
 
-	html, err := nav.Render()
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-	} else {
-		fmt.Println(html)
-	}
-
-	// More complex example
+	// Demonstrate all utility functions in a single example
 	page := g.Html(g.KV{"lang": "en"}).Add(
 		g.Head().Add(
 			g.Meta(g.KV{"charset": "UTF-8"}),
-			g.Meta(g.KV{"name": "viewport", "content": "width=device-width: initial-scale=1.0"}),
-			g.Title().Add(g.Text("GTML New API Example")),
+			g.Title().Add(g.Text("GTML Utils Example")),
 		),
-		g.Body(g.KV{"class": "container"}).Add(
-			g.Header().Add(
-				g.H1().Add(g.Text("Welcome to GTML")),
-				nav,
-			),
-			g.Main().Add(
-				g.Section(g.KV{"class": "content"}).Add(
-					g.H2().Add(g.Text("Introduction")),
-					g.P(g.KV{"class": "lead"}).Add(g.Text("This uses the new GTML API with Add() methods.")),
-					g.P().Add(
-						g.Text("Key features: "),
-						g.Strong().Add(g.Text("Type safety")),
-						g.Text(" and "),
-						g.Em().Add(g.Text("clean syntax")),
-					),
+		g.Body().Add(
+			// Using IfElse to show conditional content
+			g.IfElse(isLoggedIn,
+				g.Div(g.KV{"class": "welcome"}).Add(
+					g.H1().Add(g.Text(fmt.Sprintf("Welcome back, %s", userName))),
+					g.P().Add(g.Text("You are logged in!")),
 				),
-				g.Section(g.KV{"class": "form-example"}).Add(
-					g.H3().Add(g.Text("Contact Form")),
-					g.Form(g.KV{"method": "POST", "action": "/submit"}).Add(
-						g.Div(g.KV{"class": "form-group"}).Add(
-							g.Label(g.KV{"for": "name"}).Add(g.Text("Name:")),
-							g.Br(),
-							g.Input(g.KV{"type": "text", "id": "name", "name": "name", "required": true}),
-						),
-						g.Div(g.KV{"class": "form-group"}).Add(
-							g.Label(g.KV{"for": "email"}).Add(g.Text("Email:")),
-							g.Br(),
-							g.Input(g.KV{"type": "email", "id": "email", "name": "email", "required": true}),
-						),
-						g.Div(g.KV{"class": "form-group"}).Add(
-							g.Button(g.KV{"type": "submit"}).Add(g.Text("Submit")),
-						),
-					),
+				g.Div(g.KV{"class": "login-prompt"}).Add(
+					g.H1().Add(g.Text("Please log in")),
+					g.P().Add(g.Text("You need to authenticate to continue.")),
 				),
 			),
-			g.Footer().Add(
-				g.P().Add(g.Text("© 2026 GTML Library")),
-				g.Hr(),
-				g.P(g.KV{"class": "small"}).Add(
-					g.Text("Built with "),
-					g.Code().Add(g.Text("gtml")),
+
+			// Using If for optional content
+			g.Hr(),
+			g.If(isLoggedIn, // Try to toggle this, and see the result
+				g.Div(g.KV{"class": "user-actions"}).Add(
+					g.Button().Add(g.Text("Profile")),
+					g.Text(" "), // Add a whitespace between the two buttons. not needed if using css styles
+					g.Button().Add(g.Text("Settings")),
+				),
+			),
+
+			// Using Repeat to generate repeated elements
+			g.Hr(),
+			g.H2().Add(g.Text("Repeated Elements")),
+			g.Repeat(3, func() g.Node {
+				return g.Div(g.KV{"class": "repeated-item"}).Add(
+					g.Text("This is a repeated item"),
+					g.Br(),
+				)
+			}),
+
+			// Using Map to transform data into elements
+			g.Hr(),
+			g.H2().Add(g.Text("Mapped List")),
+			g.Ul().Add(
+				g.Map(items, func(item string) g.Node {
+					if item == "Apple" {
+						return g.Li().Add(g.Text(item), g.Span(g.KV{"class": "badge"}).Add(g.Text(" (Popular)")))
+					}
+					return g.Li().Add(g.Text(item))
+				}),
+			),
+
+			// Combining utilities
+			g.Hr(),
+			g.H2().Add(g.Text("Combined Example")),
+			g.Div().Add(
+				g.Text("Total items: "), g.Strong().Add(g.Text(fmt.Sprint(len(items)))),
+				g.If(len(items) > 2,
+					g.P().Add(g.Text("There are many items to display!")),
 				),
 			),
 		),
 	)
 
-	if err := gtml.Render(os.Stdout, page); err != nil {
-		fmt.Printf("Error: %v\n", err)
+	if err := g.Render(os.Stdout, page); err != nil {
+		panic(err)
 	}
+	//
+	// the same as:
+	//
+	// html, err := page.Render()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Print(html)
 }
