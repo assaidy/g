@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/assaidy/g"
+	gu "github.com/assaidy/g/utils"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 		),
 		g.Body().Add(
 			// Using IfElse to show conditional content
-			g.IfElse(isLoggedIn,
+			gu.IfElse(isLoggedIn,
 				g.Div(g.KV{"class": "welcome"}).Add(
 					g.H1().Add(g.Text(fmt.Sprintf("Welcome back, %s", userName))),
 					g.P().Add(g.Text("You are logged in!")),
@@ -34,7 +35,7 @@ func main() {
 
 			// Using If for optional content
 			g.Hr(),
-			g.If(isLoggedIn, // Try to toggle this, and see the result
+			gu.If(isLoggedIn, // Try to toggle this, and see the result
 				g.Div(g.KV{"class": "user-actions"}).Add(
 					g.Button().Add(g.Text("Profile")),
 					g.Text(" "), // Add a whitespace between the two buttons. not needed if using css styles
@@ -45,7 +46,7 @@ func main() {
 			// Using Repeat to generate repeated elements
 			g.Hr(),
 			g.H2().Add(g.Text("Repeated Elements")),
-			g.Repeat(3, func() g.Node {
+			gu.Repeat(3, func() g.Node {
 				return g.Div(g.KV{"class": "repeated-item"}).Add(
 					g.Text("This is a repeated item"),
 					g.Br(),
@@ -56,7 +57,7 @@ func main() {
 			g.Hr(),
 			g.H2().Add(g.Text("Mapped List")),
 			g.Ul().Add(
-				g.Map(items, func(item string) g.Node {
+				gu.Map(items, func(item string) g.Node {
 					if item == "Apple" {
 						return g.Li().Add(g.Text(item), g.Span(g.KV{"class": "badge"}).Add(g.Text(" (Popular)")))
 					}
@@ -69,7 +70,7 @@ func main() {
 			g.H2().Add(g.Text("Combined Example")),
 			g.Div().Add(
 				g.Text("Total items: "), g.Strong().Add(g.Text(fmt.Sprint(len(items)))),
-				g.If(len(items) > 2,
+				gu.If(len(items) > 2,
 					g.P().Add(g.Text("There are many items to display!")),
 				),
 			),
