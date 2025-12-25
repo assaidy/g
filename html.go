@@ -3,6 +3,7 @@ package g
 import (
 	"fmt"
 	"html"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -94,16 +95,26 @@ func (me *Element) Render() (string, error) {
 }
 
 func (me Element) renderAttrs(builder *strings.Builder) error {
+	// for deterministic attrs order
+	type kv struct {key string; value any }
+	attrSlice := make([]kv, 0, len(me.Attrs))
 	for key, value := range me.Attrs {
-		k := strings.TrimSpace(key)
+		attrSlice = append(attrSlice, kv{key, value})
+	}
+	slices.SortFunc(attrSlice, func(a, b kv) int {
+		return strings.Compare(a.key, b.key)
+	})
+
+	for _, attr := range attrSlice {
+		k := strings.TrimSpace(attr.key)
 		if k == "" {
 			return fmt.Errorf("empty/whitespace attribute key not allowed.")
 		}
-		if value == nil {
+		if attr.value == nil {
 			return fmt.Errorf("attribute '%s' has nil value", k)
 		}
 
-		switch v := value.(type) {
+		switch v := attr.value.(type) {
 		case string:
 			fmt.Fprintf(builder, ` %s="%s"`, k, html.EscapeString(v))
 		case bool:
