@@ -15,39 +15,39 @@ func main() {
 	userName := "John Doe"
 
 	// Demonstrate all utility functions in a single example
-	page := g.Html(g.KV{"lang": "en"}).Add(
-		g.Head().Add(
+	page := g.Html(g.KV{"lang": "en"},
+		g.Head(
 			g.Meta(g.KV{"charset": "UTF-8"}),
-			g.Title().Add(g.Text("GTML Utils Example")),
+			g.Title(g.Text("GTML Utils Example")),
 		),
-		g.Body().Add(
+		g.Body(
 			// Using IfElse to show conditional content
 			gu.IfElse(isLoggedIn,
-				g.Div(g.KV{"class": "welcome"}).Add(
-					g.H1().Add(g.Text(fmt.Sprintf("Welcome back, %s", userName))),
-					g.P().Add(g.Text("You are logged in!")),
+				g.Div(g.KV{"class": "welcome"},
+					g.H1(g.Text(fmt.Sprintf("Welcome back, %s", userName))),
+					g.P(g.Text("You are logged in!")),
 				),
-				g.Div(g.KV{"class": "login-prompt"}).Add(
-					g.H1().Add(g.Text("Please log in")),
-					g.P().Add(g.Text("You need to authenticate to continue.")),
+				g.Div(g.KV{"class": "login-prompt"},
+					g.H1(g.Text("Please log in")),
+					g.P(g.Text("You need to authenticate to continue.")),
 				),
 			),
 
 			// Using If for optional content
 			g.Hr(),
 			gu.If(isLoggedIn, // Try to toggle this, and see the result
-				g.Div(g.KV{"class": "user-actions"}).Add(
-					g.Button().Add(g.Text("Profile")),
+				g.Div(g.KV{"class": "user-actions"},
+					g.Button(g.Text("Profile")),
 					g.Text(" "), // Add a whitespace between the two buttons. not needed if using css styles
-					g.Button().Add(g.Text("Settings")),
+					g.Button(g.Text("Settings")),
 				),
 			),
 
 			// Using Repeat to generate repeated elements
 			g.Hr(),
-			g.H2().Add(g.Text("Repeated Elements")),
+			g.H2(g.Text("Repeated Elements")),
 			gu.Repeat(3, func() g.Node {
-				return g.Div(g.KV{"class": "repeated-item"}).Add(
+				return g.Div(g.KV{"class": "repeated-item"},
 					g.Text("This is a repeated item"),
 					g.Br(),
 				)
@@ -55,23 +55,23 @@ func main() {
 
 			// Using Map to transform data into elements
 			g.Hr(),
-			g.H2().Add(g.Text("Mapped List")),
-			g.Ul().Add(
+			g.H2(g.Text("Mapped List")),
+			g.Ul(
 				gu.Map(items, func(item string) g.Node {
 					if item == "Apple" {
-						return g.Li().Add(g.Text(item), g.Span(g.KV{"class": "badge"}).Add(g.Text(" (Popular)")))
+						return g.Li(g.Text(item), g.Span(g.KV{"class": "badge"}, g.Text(" (Popular)")))
 					}
-					return g.Li().Add(g.Text(item))
+					return g.Li(g.Text(item))
 				}),
 			),
 
 			// Combining utilities
 			g.Hr(),
-			g.H2().Add(g.Text("Combined Example")),
-			g.Div().Add(
-				g.Text("Total items: "), g.Strong().Add(g.Text(fmt.Sprint(len(items)))),
+			g.H2(g.Text("Combined Example")),
+			g.Div(
+				g.Text("Total items: "), g.Strong(g.Text(fmt.Sprint(len(items)))),
 				gu.If(len(items) > 2,
-					g.P().Add(g.Text("There are many items to display!")),
+					g.P(g.Text("There are many items to display!")),
 				),
 			),
 		),

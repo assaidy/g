@@ -12,10 +12,12 @@ import "github.com/assaidy/g"
 //
 //	div := Div(KV{"class": IfElse(isActive, "active", "inactive")})
 //
-//	Body.Add(IfElse(isAdmin,
-//	    Div().Add(g.Text("Admin content")),
-//	    g.P().Add(g.Text("Regular user content")),
-//	))
+//	Body(
+//		IfElse(isAdmin,
+//			Div(g.Text("Admin content")),
+//			P(g.Text("Regular user content")),
+//		),
+//	)
 func IfElse[T any](condition bool, result, alternative T) T {
 	if condition {
 		return result
@@ -31,9 +33,9 @@ func IfElse[T any](condition bool, result, alternative T) T {
 //
 // Example:
 //
-//	body := Body().Add(
-//	    If(showHeader, Header().Add(...)),
-//	    Main().Add(...),
+//	Body(
+//		If(showHeader, Header(...)),
+//		Main(...),
 //	)
 func If(condition bool, result g.Node) g.Node {
 	if condition {
@@ -50,15 +52,15 @@ func If(condition bool, result g.Node) g.Node {
 //
 // Example:
 //
-//	list := Ul().Add(
-//	    Repeat(5, func() g.Node {
-//	        return Li().Add(Text("List item"))
-//	    }),
+//	Ul(
+//		Repeat(5, func() g.Node {
+//			return Li(Text("List item"))
+//		}),
 //	)
 func Repeat(n int, f func() g.Node) g.Node {
 	result := g.Empty()
 	for range n {
-		result.Add(f())
+		result.Children = append(result.Children, f())
 	}
 	return result
 }
@@ -71,15 +73,15 @@ func Repeat(n int, f func() g.Node) g.Node {
 // Example:
 //
 //	items := []string{"Apple", "Banana", "Cherry"}
-//	list := Ul().Add(
-//	    Map(items, func(item string) g.Node {
-//	        return Li().Add(Text(item))
-//	    }),
+//	Ul(
+//		Map(items, func(item string) g.Node {
+//			return Li(Text(item))
+//		}),
 //	)
 func Map[T any](input []T, f func(T) g.Node) g.Node {
 	result := g.Empty()
 	for _, item := range input {
-		result.Add(f(item))
+		result.Children = append(result.Children, f(item))
 	}
 	return result
 }

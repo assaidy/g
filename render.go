@@ -10,7 +10,7 @@ import "io"
 //
 // Example:
 //
-//	err := Render(os.Stdout, Div().Add(Text("Hello")))
+//	err := Render(os.Stdout, Div(Text("Hello")))
 //	// Outputs: <div>Hello</div>
 func Render(writer io.Writer, node Node) error {
 	s, err := node.Render()
@@ -30,7 +30,7 @@ func Render(writer io.Writer, node Node) error {
 //
 // Example:
 //
-//	var node Node = Div().Add(Text("Hello"))
+//	var node Node = Div(Text("Hello"))
 //	html, err := node.Render()
 type Node interface {
 	Render() (string, error)
