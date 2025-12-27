@@ -96,7 +96,10 @@ func (me *Element) Render() (string, error) {
 
 func (me Element) renderAttrs(builder *strings.Builder) error {
 	// for deterministic attrs order
-	type kv struct {key string; value any }
+	type kv struct {
+		key   string
+		value any
+	}
 	attrSlice := make([]kv, 0, len(me.Attrs))
 	for key, value := range me.Attrs {
 		attrSlice = append(attrSlice, kv{key, value})
